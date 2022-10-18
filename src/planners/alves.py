@@ -5,17 +5,17 @@ Alves, T. L., Ypma, C., & Visser, J. (2010). Deriving metric thresholds from
 benchmark data. In ICSM'10 (pp. 1-10). http://doi.org/10.1109/ICSM.2010.5609747
 """
 
-import os
-import sys
+import os, sys
+import numpy as np
+import pandas as pd
+from sklearn.feature_selection import f_classif
 
 # Update path
 root = os.path.join(os.getcwd().split('src')[0], 'src')
 if root not in sys.path:
     sys.path.append(root)
 
-import numpy as np
-import pandas as pd
-from sklearn.feature_selection import f_classif
+from plan_utils import apply_threshold
 
 
 
@@ -25,21 +25,21 @@ def compute_weighted_CDF(X, threshold, loc_key="loc"):
 
     Parameters
     --------------------
-        X: (N, d) pd.DataFrame 
-            The training data
-        threshold : float
-            Fraction in (0, 1) of the total LOC we consider risky.
-        loc_key : str  
-            The column name of the LOC metric
+    X: (N, d) pd.DataFrame
+        The training data
+    threshold : float
+        Fraction in (0, 1) of the total LOC considered risky.
+    loc_key : str
+        The column name of the LOC metric
 
     Returns
     --------------------
-        complexity_thresh : dict 
-            dict["metric"] returns the metric threshold
-        CDFs : dict
-            dict["metric"] returns the metric weighted CDF
-        sorted_idx : dict
-            dict["metric"] returns the indices that would sort the metric
+    complexity_thresh : dict 
+        dict["metric"] returns the metric threshold
+    CDFs : dict
+        dict["metric"] returns the metric weighted CDF
+    sorted_idx : dict
+        dict["metric"] returns the indices that would sort the metric
     """
     weights = []
     metrics = X.columns
@@ -70,40 +70,25 @@ def compute_weighted_CDF(X, threshold, loc_key="loc"):
 
 
 
-def apply_threshold(X_row, complexity_thresh):
-    new_row = X_row.to_list()
-    metrics = complexity_thresh.keys()
-    for i, metric in enumerate(metrics):
-        threshold = complexity_thresh[metric]
-        if threshold is not None:
-            try:
-                if new_row[i] > threshold:
-                    new_row[i] = (0, threshold)
-            except:
-                pass
-    return new_row
-
-
-
 def alves(X_train, X_test, threshold):
     """
     Returns the Alves plan
 
     Parameters
     --------------------
-        X_train : (N_train, d) pd.DataFrame 
-            The training inputs
-        X_test : (N_test, d) pd.DataFrame
-            The test inputs
-        threshold : float
-            Fraction between (0, 1) of total LOC we consider risky.
+    X_train : (N_train, d) pd.DataFrame 
+        The training inputs used to compute the thresholds
+    X_test : (N_test, d) pd.DataFrame
+        The test inputs on which to apply the plan
+    threshold : float
+        Fraction between (0, 1) of total LOC considered risky.
 
     Returns
     --------------------
-        modified : (N_test, d) pd.DataFrame
-            The action to take on each test input.
-            A row could take the form [0.34   (0, 56)   0.68] meaning we recomment to 
-            keep x1 and x3 intact and modify x2 so it lies in the range (0, 56).
+    modified : (N_test, d) pd.DataFrame
+        The action to take on each test input.
+        A row could take the form [0.34   (0, 56)   0.68] meaning we recommend to 
+        keep x1 and x3 intact and modify x2 so it lies in the range (0, 56).
     """
     complexity_thresh, _, _ = compute_weighted_CDF(X_train, threshold)
 
@@ -111,8 +96,8 @@ def alves(X_train, X_test, threshold):
     #pVal = f_classif(train.iloc[:, :-1], train.iloc[:, -1])[1]  # P-Values
 
     modified = []
-    for n in range(X_test.shape[0]):
-        new_row = apply_threshold(X_test.iloc[n], complexity_thresh)
+    for i in range(X_test.shape[0]):
+        new_row = apply_threshold(X_test.iloc[i], complexity_thresh)
         modified.append(new_row)
 
     return pd.DataFrame(modified, columns=X_test.columns)
