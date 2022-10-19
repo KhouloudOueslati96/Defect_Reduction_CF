@@ -15,7 +15,7 @@ root = os.path.join(os.getcwd().split('src')[0], 'src')
 if root not in sys.path:
     sys.path.append(root)
 
-from plan_utils import apply_threshold
+from planners.plan_utils import apply_threshold
 
 
 

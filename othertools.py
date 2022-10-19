@@ -12,9 +12,6 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder## This file contains all tools needed to run planners.
 
 
-def list2dataframe(lst):
-    return pd.DataFrame(lst)
-
 def prepareData(fname):
     # file = fname
     file = os.path.join("Data", fname)
@@ -222,27 +219,6 @@ def norm (df1,df2):
     df2 = df2.copy()
     df2.iloc[:,:-1] = X2
     return df2
-
-
-def overlap(plan,actual): # Jaccard similarity function
-    cnt = 20
-    right = 0
-    # print(plan)
-    for i in range(0,len(plan)):
-        if isinstance(plan[i], float):
-            if np.round(actual[i],4)== np.round(plan[i],4):
-                right+=1
-        else:
-            if actual[i]>=0 and actual[i]<=1:
-                if actual[i]>=plan[i][0] and actual[i]<=plan[i][1]:
-                    right+=1
-            elif actual[i]>1:
-                if plan[i][1]>=1:
-                    right+=1
-            else:
-                if plan[i][0]<=0:
-                    right+=1
-    return right/cnt
 
 
 def similar(ins):
