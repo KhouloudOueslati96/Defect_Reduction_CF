@@ -11,7 +11,7 @@ from data.get_data import get_all_projects
 from planners.alves import alves
 from planners.shatnawi import shatnawi
 from planners.oliveira import oliveira
-# from planners.counterfactual import basic_cfe
+from planners.counterfactual import basic_cfe, get_actionable_set, focused_cfe
 from utils import get_dataframes, measure_overlap
 
 def main():
@@ -20,28 +20,60 @@ def main():
 
     # Study all projects
     for project, paths in tqdm(data.items()):
+        print
         # Study three consecutive versions
         for train, test, validation in zip(paths[:-2], paths[1:-1], paths[2:]):
+
 
             # Get the pandas dataframes
             files_train, X_train, y_train = get_dataframes(train)
             files_test, X_test, y_test    = get_dataframes(test)
             files_valid, X_valid, y_valid = get_dataframes(validation)
 
+            # Get the actionable set from train test and validation dataframes    
+            actionable_set = get_actionable_set(train, test, validation)
+            indexes = [ i for i in range(len(actionable_set)) if actionable_set[i] == 1]
+            actionable_set_names = [X_train.columns[index] for index in indexes]
+            print(actionable_set_names)
+
+            
+            X_test = X_test[X_test.index.isin(y_test[y_test != 0].index)]
+            files_test = files_test[files_test.index.isin(y_test[y_test != 0].index)]
+            y_test = y_test[y_test != 0]
+            X_test.reset_index(drop=True, inplace= True)
+            y_test.reset_index(drop=True, inplace= True)
+            files_test.reset_index(drop=True, inplace= True)
+
+            
+            
+
+
             # Plans
-            plan_alves = alves(X_train, X_test, threshold=0.9)
-            plan_shatw = shatnawi(X_train, (y_train>0).astype(int), X_test, p=0.1)
-            plan_olive = oliveira(X_train, X_test)
+
+            #plan_alves = alves(X_train, X_test, threshold=0.9)
+            #plan_shatw = shatnawi(X_train, (y_train>0).astype(int), X_test, p=0.1)
+            #plan_olive = oliveira(X_train, X_test)
             # TODO add this plan
             # plan_cfe = basic_cfe(X_train, (y_train>0).astype(int), X_test)
+            plan_focused = focused_cfe(X_train, (y_train>0).astype(int), X_test, actionable_set_names)
+
             # Other methods will include XTree, TimeLIME, HistoryCFE
 
             # Compute overlap between plan and developers changes
-            res_alves = measure_overlap(plan_alves, files_test, X_test, y_test, files_valid, X_valid, y_valid)
-            res_shatw = measure_overlap(plan_shatw, files_test, X_test, y_test, files_valid, X_valid, y_valid)
-            res_olive = measure_overlap(plan_olive, files_test, X_test, y_test, files_valid, X_valid, y_valid)
+            #res_alves = measure_overlap(plan_alves, files_test, X_test, y_test, files_valid, X_valid, y_valid)
+            #res_shatw = measure_overlap(plan_shatw, files_test, X_test, y_test, files_valid, X_valid, y_valid)
+            #res_olive = measure_overlap(plan_olive, files_test, X_test, y_test, files_valid, X_valid, y_valid)
+
+            #print(res_alves)
+            #print(res_shatw)
+            #print(res_olive)
             # TODO add cfe
-            # res_cfe = measure_overlap(plan_cfe, files_test, X_test, y_test, files_valid, X_valid, y_valid)
+            res_cfe = measure_overlap(plan_cfe, files_test, X_test, y_test, files_valid, X_valid, y_valid)
+            #res_focused = measure_overlap(plan_focused, files_test, X_test, y_test, files_valid, X_valid, y_valid)
+            print(res_cfe)
+            #print(res_focused)
+            
+
 
 
     ######## Leave the rest commented for now. At least until I understand how it works ################
@@ -105,7 +137,7 @@ def main():
     # Pattern Mining for TimeLIME
     # for project, paths in data.items():
     #     for name in zip(paths[:-2], paths[1:-1], paths[2:]):
-    #         o, n = historical_logs(name, 20, explainer, smote=True)
+            #o, n = historical_logs(name, 20, explainer, smote=True)
     #         old.append(o)
     #         new.append(n)
     # everything = []
