@@ -597,19 +597,17 @@ def xtree(name):
     return overlap_scores,bcs,size,score2,matrix
 
 
-def historical_logs(name, par, explainer=None, smote=False, small=0.05, act=False):
+def historical_logs(files, par, explainer=None, smote=False, act=True):
     start_time = time.time()
-    files = [name[0], name[1], name[2]]
-    freq = [0] * 20
     deltas = []
-    for j in range(0, len(files) - 2):
-        df1 = prepareData(files[j])
-        df2 = prepareData(files[j + 1])
-        for i in range(1, 21):
-            col1 = df1.iloc[:, i]
-            col2 = df2.iloc[:, i]
-            deltas.append(hedge(col1, col2))
-    deltas = sorted(range(len(deltas)), key=lambda k: deltas[k], reverse=True)
+    df1 = prepareData(files[0])
+    df2 = prepareData(files[1])
+    df3 = prepareData(files[2])
+    for i in range(1, 21):
+        col1 = df1.iloc[:, i]
+        col2 = df2.iloc[:, i]
+        deltas.append(hedge(col1, col2))
+    deltas = np.argsort(-np.array(deltas))
 
     actionable = []
     for i in range(0, len(deltas)):
@@ -618,12 +616,11 @@ def historical_logs(name, par, explainer=None, smote=False, small=0.05, act=Fals
         else:
             actionable.append(0)
     print(actionable)
-    df1 = prepareData(name[0])
-    df2 = prepareData(name[1])
-    df3 = prepareData(name[2])
-    bug1 = bugs(name[0])
-    bug2 = bugs(name[1])
-    bug3 = bugs(name[2])
+    
+    # Too complicated for no reason here ...
+    bug1 = bugs(files[0])
+    bug2 = bugs(files[1])
+    bug3 = bugs(files[2])
     df11 = df1.iloc[:, 1:]
     df22 = df2.iloc[:, 1:]
     df33 = df3.iloc[:, 1:]
@@ -648,7 +645,7 @@ def historical_logs(name, par, explainer=None, smote=False, small=0.05, act=Fals
         sm = SMOTE()
         X_train1_s, y_train1_s = sm.fit_resample(X_train1, y_train1)
         clf1.fit(X_train1_s, y_train1_s)
-        explainer = lime.lime_tabular.LimeTabularExplainer(training_data=X_train1_s, training_labels=y_train1_s,
+        explainer = lime.lime_tabular.LimeTabularExplainer(training_data=X_train1_s.values, training_labels=y_train1_s,
                                                            feature_names=df11.columns,
                                                            discretizer='entropy', feature_selection='lasso_path',
                                                            mode='classification', sample_around_instance=True)
@@ -680,7 +677,7 @@ def historical_logs(name, par, explainer=None, smote=False, small=0.05, act=Fals
 
                 break
     print("Runtime:", time.time() - start_time)
-    print(name[0], par)
+    print(files[0], par)
     print('>>>')
     print('>>>')
     print('>>>')

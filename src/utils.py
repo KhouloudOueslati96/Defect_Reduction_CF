@@ -78,13 +78,13 @@ def measure_overlap(plan_X, files_test, X_test, y_test, files_valid, X_valid, y_
     common_modules = list(set(files_test).intersection(set(files_valid)))
 
     # Intitialize variables to hold information
-    improve_heeded = []
+    improve_bugs = []
     overlap = []
 
     for module_name in common_modules:
         same = 0  # Keep track of features that follow our recommendations
-        # Metric values of classes in the test set
-        test_value = X_test.loc[files_test == module_name]
+        # # Metric values of classes in the test set
+        # test_value = X_test.loc[files_test == module_name]
         # Metric values of classes in the planned changes
         plan_value = plan_X.loc[files_test == module_name]
         # Actual metric values the developer's changes yielded
@@ -115,16 +115,16 @@ def measure_overlap(plan_X, files_test, X_test, y_test, files_valid, X_valid, y_
         # Find % of overlap for the class.
         overlap.append(int(same / len(metrics) * 100))
         # Variation in the number of bugs between the test and validation versions for that module
-        heeded = y_test.loc[files_test == module_name].values[0] - \
-                 y_valid.loc[files_valid == module_name].values[0]
-        improve_heeded.append(heeded)
+        bug_reduced = y_test.loc[files_test == module_name].values[0] - \
+                      y_valid.loc[files_valid == module_name].values[0]
+        improve_bugs.append(bug_reduced)
     
     # "Save the results ... "
     # validation_common = validation.loc[validation["Name"].isin(common_modules)]
 
     results['Module'] = common_modules
     results['Overlap'] = overlap
-    results['Heeded'] = improve_heeded
+    results['bug_reduced'] = improve_bugs
 
     return results#, [_effectiveness(results, thresh_min=lo, thresh_max=hi) for lo, hi in zip(OVERLAP_RANGE[:-1], OVERLAP_RANGE[1:])]
     # return [tuple(map(lambda x: int(100*x/len(validation_common['<bug'].tolist())), _effectiveness(results, thresh_min=lo, thresh_max=hi))) for lo, hi in zip(OVERLAP_RANGE[:-1], OVERLAP_RANGE[1:])]
